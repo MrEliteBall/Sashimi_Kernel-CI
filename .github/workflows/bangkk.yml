@@ -1,4 +1,4 @@
-name: Build Kernel bangkk Sixteen
+name: Build Kernel bangkk SixteenQPR2
 
 on:
   workflow_dispatch:
@@ -19,7 +19,7 @@ jobs:
         uses: sushikernel/github-repo-action@v3.1
         with:
           depth: 1
-          branch: 'sixteen'
+          branch: 'resukisu'
           owner: 'SushiKernel'
           repository: 'android_kernel_motorola_bangkk'
           access-token: '${{ secrets.TOKEN_GITHUB }}'
@@ -53,8 +53,8 @@ jobs:
       - name: Move Scripts
         working-directory: ./scripts
         run: |
-          chmod +x bot.py bot.sh ksu_update.sh moe.sh
-          cp moe.sh ksu_update.sh bot.sh bot.py build_count.txt ../android_kernel_motorola_bangkk
+          chmod +x bot.py bot.sh sushi.sh
+          cp sushi.sh bot.sh bot.py build_count.txt ../android_kernel_motorola_bangkk
 
       - name: Github Configs
         working-directory: ./android_kernel_motorola_bangkk
@@ -89,7 +89,7 @@ jobs:
         working-directory: ./scripts
         run: |
           git config --global user.email "barryofc11@gmail.com"
-          git config --global user.name "Akari"
+          git config --global user.name "whyakari"
           git remote set-url origin https://${{ secrets.TOKEN_GITHUB }}@github.com/SushiKernel/scripts.git
 
           git add build_count.txt
