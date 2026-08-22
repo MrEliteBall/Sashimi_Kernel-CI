@@ -1,7 +1,13 @@
-name: Build Sashimi Kernel Bangkk
+name: Build Sashimi Kernel bangkk
 
 on:
   workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Kernel Branch'
+        required: true
+        default: 'resukisu'
+        type: string
 
 permissions:
   contents: write
@@ -32,7 +38,7 @@ jobs:
         uses: sushikernel/github-repo-action@v3.1
         with:
           depth: 1
-          branch: 'resukisu'
+          branch: ${{ inputs.branch || 'resukisu' }}
           owner: 'MrEliteBall'
           repository: 'android_kernel_motorola_bangkk'
 
@@ -106,6 +112,7 @@ jobs:
           name: Sashimi Kernel (bangkk) - ${{ env.BUILD_ID }}
           body: |
             * Device: bangkk
+            * Branch: ${{ inputs.branch || 'resukisu' }}
             * KernelSU: Yes ([ReSukiSU](https://github.com/${{ github.repository }}/releases/download/bangkk-${{ env.DATE_TAG }}-${{ env.BUILD_ID }}/ReSukiSU_Manager.apk))
             * Date: ${{ env.DATE_STR }}
             * SHA256: `${{ env.ZIP_SHA256 }}`
