@@ -3,6 +3,9 @@ name: Build Kernel bangkk SixteenQPR2
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 env:
   TOKEN_GITHUB: ${{ secrets.TOKEN_GITHUB }}
 
@@ -15,6 +18,17 @@ jobs:
       CCACHE_HARDLINK: "true"
 
     steps:
+      - name: Setup Build Environment & ID
+        run: |
+          sudo apt-get update
+          sudo apt-get -y --no-install-recommends install libarchive-tools
+          
+          BUILD_ID=$(python3 -c "import random, string; print(''.join(random.choice(string.ascii_uppercase) + random.choice(string.digits) for _ in range(3)))")
+          DATE_STR=$(date +'%d.%m.2026')
+          
+          echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
+          echo "DATE_STR=${DATE_STR}" >> $GITHUB_ENV
+
       - name: Clone Repo Kernel
         uses: sushikernel/github-repo-action@v3.1
         with:
@@ -61,20 +75,15 @@ jobs:
         run: |
           git config --global user.email "akariondev@gmail.com"
           git config --global user.name "bangkk"
-  
-      - name: Install Dependencies
-        run: |
-         sudo apt-get update
-         sudo apt-get -y --no-install-recommends install libarchive-tools # cpio flex bc git make git
 
       - name: Export Variables
         working-directory: ./android_kernel_motorola_bangkk
         run: |
-         echo "CHAT_ID=${{ secrets.CHAT_ID }}" >> .env
-         echo "MESSAGE_THREAD_ID=${{ secrets.MESSAGE_THREAD_ID }}" >> .env
-         echo "API_ID=${{ secrets.API_ID }}" >> .env
-         echo "API_HASH=${{ secrets.API_HASH }}" >> .env
-         echo "BOT_TOKEN=${{ secrets.BOT_TOKEN }}" >> .env
+          echo "CHAT_ID=${{ secrets.CHAT_ID }}" >> .env
+          echo "MESSAGE_THREAD_ID=${{ secrets.MESSAGE_THREAD_ID }}" >> .env
+          echo "API_ID=${{ secrets.API_ID }}" >> .env
+          echo "API_HASH=${{ secrets.API_HASH }}" >> .env
+          echo "BOT_TOKEN=${{ secrets.BOT_TOKEN }}" >> .env
 
       - name: Compile Kernel CI
         working-directory: ./android_kernel_motorola_bangkk
@@ -96,3 +105,31 @@ jobs:
           git add build_count.txt
           git commit -m "update build count"
           git push origin bangkk -f
+
+      - name: Prepare Release Artifacts
+        run: |
+          mkdir -p release_out
+          # Localiza qualquer zip gerado pela compilação
+          find android_kernel_motorola_bangkk -maxdepth 2 -type f -name "*.zip" -exec cp {} release_out/ \;
+          ZIP_NAME=$(ls release_out | head -n 1)
+          if [ -n "$ZIP_NAME" ]; then
+            SHA256=$(sha256sum "release_out/$ZIP_NAME" | awk '{print $1}')
+            echo "ZIP_PATH=release_out/$ZIP_NAME" >> $GITHUB_ENV
+            echo "ZIP_SHA256=$SHA256" >> $GITHUB_ENV
+          fi
+
+      - name: Create GitHub Release
+        if: env.ZIP_PATH != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: bangkk-${{ env.BUILD_ID }}
+          name: SEDONA Kernel (bangkk) - ${{ env.BUILD_ID }}
+          body: |
+            * Device: bangkk
+            * KernelSU: Yes
+            * Date: ${{ env.DATE_STR }}
+            * SHA256: `${{ env.ZIP_SHA256 }}`
+          files: ${{ env.ZIP_PATH }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN_GITHUB || secrets.GITHUB_TOKEN }}
+          
