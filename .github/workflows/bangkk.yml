@@ -1,4 +1,4 @@
-name: Build Kernel bangkk SixteenQPR2
+name: Build Kernel Bangkk
 
 on:
   workflow_dispatch:
@@ -31,7 +31,7 @@ jobs:
         with:
           depth: 1
           branch: 'resukisu'
-          owner: 'SushiKernel'
+          owner: 'MrEliteBall'
           repository: 'android_kernel_motorola_bangkk'
 
       - name: Clone Repo Build
