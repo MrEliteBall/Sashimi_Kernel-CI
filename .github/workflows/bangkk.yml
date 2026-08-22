@@ -1,4 +1,4 @@
-name: Build Kernel Bangkk
+name: Build Kernel Sashimi bangkk
 
 on:
   workflow_dispatch:
@@ -18,13 +18,15 @@ jobs:
       - name: Setup Build Environment & ID
         run: |
           sudo apt-get update
-          sudo apt-get -y --no-install-recommends install libarchive-tools
+          sudo apt-get -y --no-install-recommends install libarchive-tools jq
           
-          BUILD_ID=$(python3 -c "import random, string; print(''.join(random.choice(string.ascii_uppercase) + random.choice(string.digits) for _ in range(3)))")
-          DATE_STR=$(date +'%d.%m.2026')
+          BUILD_ID=$(date +'%H%M')
+          DATE_STR=$(date +'%d.%m.%Y')
+          DATE_TAG=$(date +'%Y%m%d')
           
           echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
           echo "DATE_STR=${DATE_STR}" >> $GITHUB_ENV
+          echo "DATE_TAG=${DATE_TAG}" >> $GITHUB_ENV
 
       - name: Clone Repo Kernel
         uses: sushikernel/github-repo-action@v3.1
@@ -54,31 +56,43 @@ jobs:
           swap-size-gb: 10
 
       - name: Clone Repo Scripts
-        uses: SushiKernel/github-repo-action@v3.1
+        uses: sushikernel/github-repo-action@v3.1
         with:
-          owner: 'SushiKernel'
+          owner: 'MrEliteBall'
           branch: 'bangkk'
           repository: 'scripts'
 
       - name: Move Scripts
         working-directory: ./scripts
         run: |
-          chmod +x sushi.sh
-          cp sushi.sh build_count.txt ../android_kernel_motorola_bangkk
+          chmod +x *.sh
+          cp sashimi.sh bot.sh ../android_kernel_motorola_bangkk
+
+      - name: Export Variables
+        working-directory: ./android_kernel_motorola_bangkk
+        run: |
+          echo "CHAT_ID=${{ secrets.CHAT_ID }}" >> .env
+          echo "MESSAGE_THREAD_ID=${{ secrets.MESSAGE_THREAD_ID }}" >> .env
+          echo "API_ID=${{ secrets.API_ID }}" >> .env
+          echo "API_HASH=${{ secrets.API_HASH }}" >> .env
+          echo "BOT_TOKEN=${{ secrets.BOT_TOKEN }}" >> .env
+          echo "MY_ID=${{ secrets.MY_ID }}" >> .env
+          echo "CHANNEL_ID=${{ secrets.CHANNEL_ID }}" >> .env
 
       - name: Compile Kernel CI
         working-directory: ./android_kernel_motorola_bangkk
         run: |
-          ./sushi.sh -v bangkk
+          ./bot.sh
 
       - name: Prepare Release Artifacts
         run: |
           mkdir -p release_out
-          find android_kernel_motorola_bangkk -maxdepth 2 -type f -name "*.zip" -exec cp {} release_out/ \;
-          ZIP_NAME=$(ls release_out | head -n 1)
-          if [ -n "$ZIP_NAME" ]; then
-            SHA256=$(sha256sum "release_out/$ZIP_NAME" | awk '{print $1}')
-            echo "ZIP_PATH=release_out/$ZIP_NAME" >> $GITHUB_ENV
+          ORIG_ZIP=$(find android_kernel_motorola_bangkk -maxdepth 2 -type f -name "*.zip" | head -n 1)
+          if [ -n "$ORIG_ZIP" ]; then
+            NEW_ZIP="sashimi-${{ env.DATE_TAG }}-${{ env.BUILD_ID }}-bangkk.zip"
+            cp "$ORIG_ZIP" "release_out/$NEW_ZIP"
+            SHA256=$(sha256sum "release_out/$NEW_ZIP" | awk '{print $1}')
+            echo "ZIP_PATH=release_out/$NEW_ZIP" >> $GITHUB_ENV
             echo "ZIP_SHA256=$SHA256" >> $GITHUB_ENV
           fi
 
@@ -86,11 +100,11 @@ jobs:
         if: env.ZIP_PATH != ''
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: bangkk-${{ env.BUILD_ID }}
-          name: SUSHI Kernel (bangkk) - ${{ env.BUILD_ID }}
+          tag_name: bangkk-${{ env.DATE_TAG }}-${{ env.BUILD_ID }}
+          name: Sashimi Kernel (bangkk) - ${{ env.BUILD_ID }}
           body: |
             * Device: bangkk
-            * KernelSU: Yes
+            * KernelSU: Yes (ReSukiSU)
             * Date: ${{ env.DATE_STR }}
             * SHA256: `${{ env.ZIP_SHA256 }}`
           files: ${{ env.ZIP_PATH }}
