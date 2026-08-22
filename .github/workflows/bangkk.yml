@@ -69,7 +69,7 @@ jobs:
       - name: Compile Kernel CI
         working-directory: ./android_kernel_motorola_bangkk
         run: |
-          ./sushi.sh
+          ./sushi.sh -v bangkk
 
       - name: Prepare Release Artifacts
         run: |
