@@ -1,4 +1,4 @@
-name: Build Kernel Sashimi bangkk
+name: Build Sashimi Kernel bangkk
 
 on:
   workflow_dispatch:
@@ -96,6 +96,11 @@ jobs:
             echo "ZIP_SHA256=$SHA256" >> $GITHUB_ENV
           fi
 
+          APK_URL=$(curl -s https://api.github.com/repos/ReSukiSU/ReSukiSU/releases/latest | jq -r '.assets[] | select(.name | endswith(".apk")) | .browser_download_url' | head -n 1)
+          if [ -n "$APK_URL" ] && [ "$APK_URL" != "null" ]; then
+            curl -sLo "release_out/ReSukiSU_Manager.apk" "$APK_URL"
+          fi
+
       - name: Create GitHub Release
         if: env.ZIP_PATH != ''
         uses: softprops/action-gh-release@v2
@@ -104,10 +109,12 @@ jobs:
           name: Sashimi Kernel (bangkk) - ${{ env.BUILD_ID }}
           body: |
             * Device: bangkk
-            * KernelSU: Yes (ReSukiSU)
+            * KernelSU: Yes ([ReSukiSU](https://github.com/${{ github.repository }}/releases/download/bangkk-${{ env.DATE_TAG }}-${{ env.BUILD_ID }}/ReSukiSU_Manager.apk))
             * Date: ${{ env.DATE_STR }}
             * SHA256: `${{ env.ZIP_SHA256 }}`
-          files: ${{ env.ZIP_PATH }}
+          files: |
+            ${{ env.ZIP_PATH }}
+            release_out/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
