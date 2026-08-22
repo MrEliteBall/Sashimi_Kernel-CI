@@ -96,9 +96,9 @@ jobs:
             echo "ZIP_SHA256=$SHA256" >> $GITHUB_ENV
           fi
 
-          APK_URL=$(curl -s https://api.github.com/repos/ReSukiSU/ReSukiSU/releases/latest | jq -r '.assets[] | select(.name | endswith(".apk")) | .browser_download_url' | head -n 1)
+          APK_URL=$(curl -sL -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/ReSukiSU/ReSukiSU/releases/latest | jq -r '.assets[] | select(.name | endswith(".apk")) | .browser_download_url' | head -n 1)
           if [ -n "$APK_URL" ] && [ "$APK_URL" != "null" ]; then
-            curl -sLo "release_out/ReSukiSU_Manager.apk" "$APK_URL"
+            curl -sL -o "release_out/ReSukiSU_Manager.apk" "$APK_URL"
           fi
 
       - name: Create GitHub Release
