@@ -8,6 +8,16 @@ on:
         required: true
         default: 'resukisu'
         type: string
+      upload_telegram:
+        description: 'Upload build to Telegram'
+        required: true
+        default: true
+        type: boolean
+      create_release:
+        description: 'Create GitHub Release'
+        required: true
+        default: true
+        type: boolean
 
 permissions:
   contents: write
@@ -27,7 +37,7 @@ jobs:
           sudo apt-get -y --no-install-recommends install libarchive-tools jq
           
           BUILD_ID=$(date +'%H%M')
-          DATE_STR=$(date +'%d.%m.%Y')
+          DATE_STR="$(date +'%d.%m.%y')'"
           DATE_TAG=$(date +'%Y%m%d')
           
           echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
@@ -75,6 +85,7 @@ jobs:
           cp sashimi.sh bot.sh ../android_kernel_motorola_bangkk
 
       - name: Export Variables
+        if: ${{ inputs.upload_telegram }}
         working-directory: ./android_kernel_motorola_bangkk
         run: |
           echo "CHAT_ID=${{ secrets.CHAT_ID }}" >> .env
@@ -88,9 +99,14 @@ jobs:
       - name: Compile Kernel CI
         working-directory: ./android_kernel_motorola_bangkk
         run: |
-          ./bot.sh
+          if [ "${{ inputs.upload_telegram }}" = "true" ]; then
+            ./bot.sh
+          else
+            ./sashimi.sh
+          fi
 
       - name: Prepare Release Artifacts
+        if: ${{ inputs.create_release }}
         run: |
           mkdir -p release_out
           ORIG_ZIP=$(find android_kernel_motorola_bangkk -maxdepth 2 -type f -name "*.zip" | head -n 1)
@@ -105,7 +121,7 @@ jobs:
           curl -sLo "release_out/ReSukiSU_Manager.apk" "https://github.com/ReSukiSU/ReSukiSU/releases/download/v4.2.0-rc1/ReSukiSU_v4.2.0-rc1_35061-arm64-v8a-release.apk"
 
       - name: Create GitHub Release
-        if: env.ZIP_PATH != ''
+        if: ${{ inputs.create_release && env.ZIP_PATH != '' }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: bangkk-${{ env.DATE_TAG }}-${{ env.BUILD_ID }}
