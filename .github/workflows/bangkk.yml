@@ -31,10 +31,10 @@ jobs:
       CCACHE_HARDLINK: "true"
 
     steps:
-      - name: Setup Build Environment & ID
+      - name: Setup Dependencies & ID
         run: |
-          sudo apt-get update
-          sudo apt-get -y --no-install-recommends install libarchive-tools jq
+         sudo apt-get update
+         sudo apt-get -y --no-install-recommends install libarchive-tools
           
           BUILD_ID=$(date +'%H%M')
           DATE_STR="$(date +'%d.%m.%y')'"
@@ -61,7 +61,7 @@ jobs:
           repository: 'build'
 
       - name: Prepare Configuration
-        working-directory: ./build
+        working-directory: ./Sashimi_Kernel-CI
         run: |
           CONFIG_ENV=$(cat config.env | grep -w "CONFIG_ENV" | head -n 1 | cut -d "=" -f 2)
           echo "ENABLE_CCACHE=$(cat $CONFIG_ENV | grep -w "ENABLE_CCACHE" | head -n 1 | cut -d "=" -f 2)" >> $GITHUB_ENV
