@@ -44,7 +44,7 @@ jobs:
           echo "DATE_STR=${DATE_STR}" >> $GITHUB_ENV
           echo "DATE_TAG=${DATE_TAG}" >> $GITHUB_ENV
 
-      - name: Clone Repo Kernel
+      - name: Clone Kernel Repo
         uses: sushikernel/github-repo-action@v3.1
         with:
           depth: 1
@@ -52,13 +52,13 @@ jobs:
           owner: 'MrEliteBall'
           repository: 'android_kernel_motorola_bangkk'
 
-      - name: Clone Repo Build
+      - name: Clone Build Repo
         uses: sushikernel/github-repo-action@v3.1
         with:
           depth: 1
           branch: 'main'
-          owner: 'SushiKernel'
-          repository: 'build'
+          owner: 'MrEliteBall'
+          repository: 'Sashimi_Kernel-CI'
 
       - name: Prepare Configuration
         working-directory: ./Sashimi_Kernel-CI
@@ -66,12 +66,12 @@ jobs:
           CONFIG_ENV=$(cat config.env | grep -w "CONFIG_ENV" | head -n 1 | cut -d "=" -f 2)
           echo "ENABLE_CCACHE=$(cat $CONFIG_ENV | grep -w "ENABLE_CCACHE" | head -n 1 | cut -d "=" -f 2)" >> $GITHUB_ENV
 
-      - name: Set swap to 24G
+      - name: Set SWAP to 10G
         uses: SushiKernel/swap@moe
         with:
           swap-size-gb: 10
 
-      - name: Clone Repo Scripts
+      - name: Clone Scripts Repo
         uses: sushikernel/github-repo-action@v3.1
         with:
           owner: 'MrEliteBall'
@@ -96,7 +96,7 @@ jobs:
           echo "MY_ID=${{ secrets.MY_ID }}" >> .env
           echo "CHANNEL_ID=${{ secrets.CHANNEL_ID }}" >> .env
 
-      - name: Compile Kernel CI
+      - name: Compile Kernel
         working-directory: ./android_kernel_motorola_bangkk
         run: |
           if [ "${{ inputs.upload_telegram }}" = "true" ]; then
