@@ -51,7 +51,7 @@ jobs:
         with:
           depth: 1
           branch: ${{ inputs.branch || 'resukisu' }}
-          owner: 'MrEliteBall'
+          owner: 'SashimiKernel'
           repository: 'android_kernel_motorola_bangkk'
 
       - name: Clone Build Repo
@@ -59,11 +59,11 @@ jobs:
         with:
           depth: 1
           branch: 'main'
-          owner: 'MrEliteBall'
-          repository: 'Sashimi_Kernel-CI'
+          owner: 'SashimiKernel'
+          repository: 'CI'
 
       - name: Prepare Configuration
-        working-directory: ./Sashimi_Kernel-CI
+        working-directory: ./CI
         run: |
           CONFIG_ENV=$(cat config.env | grep -w "CONFIG_ENV" | head -n 1 | cut -d "=" -f 2)
           echo "ENABLE_CCACHE=$(cat $CONFIG_ENV | grep -w "ENABLE_CCACHE" | head -n 1 | cut -d "=" -f 2)" >> $GITHUB_ENV
@@ -76,7 +76,7 @@ jobs:
       - name: Clone Scripts Repo
         uses: sushikernel/github-repo-action@v3.1
         with:
-          owner: 'MrEliteBall'
+          owner: 'SashimiKernel'
           branch: 'bangkk'
           repository: 'scripts'
 
@@ -120,8 +120,8 @@ jobs:
             echo "ZIP_SHA256=$SHA256" >> $GITHUB_ENV
           fi
 
-          if [ -d "Sashimi_Kernel-CI/Manager" ]; then
-            cp Sashimi_Kernel-CI/Manager/*.apk release_out/
+          if [ -d "CI/Manager" ]; then
+            cp CI/Manager/*.apk release_out/
           elif [ -d "Manager" ]; then
             cp Manager/*.apk release_out/
           fi
