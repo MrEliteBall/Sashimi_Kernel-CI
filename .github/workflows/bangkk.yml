@@ -111,12 +111,12 @@ jobs:
         if: ${{ inputs.create_release }}
         run: |
           mkdir -p release_out
-          ORIG_ZIP=$(find android_kernel_motorola_bangkk -maxdepth 2 -type f -name "*.zip" | head -n 1)
-          if [ -n "$ORIG_ZIP" ]; then
-            NEW_ZIP="sashimi-${{ env.DATE_TAG }}-${{ env.BUILD_ID }}-bangkk.zip"
-            cp "$ORIG_ZIP" "release_out/$NEW_ZIP"
-            SHA256=$(sha256sum "release_out/$NEW_ZIP" | awk '{print $1}')
-            echo "ZIP_PATH=release_out/$NEW_ZIP" >> $GITHUB_ENV
+          ZIP_FILE=$(find android_kernel_motorola_bangkk -maxdepth 2 -type f -name "sashimi-*.zip" | head -n 1)
+          if [ -n "$ZIP_FILE" ]; then
+            cp "$ZIP_FILE" release_out/
+            ZIP_NAME=$(basename "$ZIP_FILE")
+            SHA256=$(sha256sum "release_out/$ZIP_NAME" | awk '{print $1}')
+            echo "ZIP_PATH=release_out/$ZIP_NAME" >> $GITHUB_ENV
             echo "ZIP_SHA256=$SHA256" >> $GITHUB_ENV
           fi
 
@@ -125,7 +125,7 @@ jobs:
           elif [ -d "Manager" ]; then
             cp Manager/*.apk release_out/
           fi
-
+          
       - name: Create GitHub Release
         if: ${{ inputs.create_release && env.ZIP_PATH != '' }}
         uses: softprops/action-gh-release@v2
