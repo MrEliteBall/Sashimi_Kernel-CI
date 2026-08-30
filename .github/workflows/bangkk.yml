@@ -120,18 +120,10 @@ jobs:
             echo "ZIP_SHA256=$SHA256" >> $GITHUB_ENV
           fi
 
-          RELEASE_JSON=$(curl -s https://api.github.com/repos/ReSukiSU/ReSukiSU/releases/latest)
-
-          MANAGER_URL=$(echo "$RELEASE_JSON" | grep "browser_download_url.*arm64-v8a-release\.apk" | grep -v -i "spoof" | cut -d '"' -f 4 | head -n 1)
-          if [ -n "$MANAGER_URL" ]; then
-            curl -sLo "release_out/ReSukiSU_Manager.apk" "$MANAGER_URL"
-          else
-            curl -sLo "release_out/ReSukiSU_Manager.apk" "https://github.com/ReSukiSU/ReSukiSU/releases/download/v4.2.0-rc1/ReSukiSU_v4.2.0-rc1_35061-arm64-v8a-release.apk"
-          fi
-
-          SPOOFED_URL=$(echo "$RELEASE_JSON" | grep -i "browser_download_url.*spoof.*\.apk" | cut -d '"' -f 4 | head -n 1)
-          if [ -n "$SPOOFED_URL" ]; then
-            curl -sLo "release_out/ReSukiSU_Spoofed_Manager.apk" "$SPOOFED_URL"
+          if [ -d "Sashimi_Kernel-CI/Manager" ]; then
+            cp Sashimi_Kernel-CI/Manager/*.apk release_out/
+          elif [ -d "Manager" ]; then
+            cp Manager/*.apk release_out/
           fi
 
       - name: Create GitHub Release
@@ -144,7 +136,7 @@ jobs:
             * Device: bangkk
             * Date: ${{ env.DATE_STR }}
             * Branch: ${{ inputs.branch || 'resukisu' }}
-            * KernelSU: Yes ([Manager](https://github.com/${{ github.repository }}/releases/download/bangkk-${{ env.DATE_RELEASE }}-${{ env.BUILD_ID }}/ReSukiSU_Manager.apk) & [Spoofed Manager](https://github.com/${{ github.repository }}/releases/download/bangkk-${{ env.DATE_RELEASE }}-${{ env.BUILD_ID }}/ReSukiSU_Spoofed_Manager.apk))
+            * KernelSU: Yes ([Manager](https://github.com/${{ github.repository }}/releases/download/bangkk-${{ env.DATE_RELEASE }}-${{ env.BUILD_ID }}/ReSukiSU_Manager.apk) & [Spoofed Manager](https://github.com/${{ github.repository }}/releases/download/bangkk-${{ env.DATE_RELEASE }}-${{ env.BUILD_ID }}/ReSukiSU_Manager-Spoofed.apk))
             * SHA256: `${{ env.ZIP_SHA256 }}`
           files: |
             ${{ env.ZIP_PATH }}
