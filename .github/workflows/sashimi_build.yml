@@ -98,11 +98,11 @@ jobs:
         working-directory: ./scripts
         run: |
           chmod +x *.sh
-          cp sashimi.sh bot.sh ../android_kernel_motorola_bangkk
+          cp sashimi.sh bot.sh ../android_kernel_motorola_sm6375
 
       - name: Export Variables
         if: ${{ inputs.upload_telegram }}
-        working-directory: ./android_kernel_motorola_bangkk
+        working-directory: ./android_kernel_motorola_sm6375
         run: |
           echo "CHAT_ID=${{ secrets.CHAT_ID }}" >> .env
           echo "MESSAGE_THREAD_ID=${{ secrets.MESSAGE_THREAD_ID }}" >> .env
@@ -113,7 +113,7 @@ jobs:
           echo "CHANNEL_ID=${{ secrets.CHANNEL_ID }}" >> .env
 
       - name: Compile Kernel
-        working-directory: ./android_kernel_motorola_bangkk
+        working-directory: ./android_kernel_motorola_sm6375
         run: |
           if [ "${{ inputs.upload_telegram }}" = "true" ]; then
             ./bot.sh
@@ -125,7 +125,7 @@ jobs:
         if: ${{ inputs.create_release }}
         run: |
           mkdir -p release_out
-          ZIP_FILE=$(find android_kernel_motorola_bangkk -maxdepth 2 -type f -name "sashimi-*.zip" | head -n 1)
+          ZIP_FILE=$(find android_kernel_motorola_sm6375 -maxdepth 2 -type f -name "sashimi-*.zip" | head -n 1)
           if [ -n "$ZIP_FILE" ]; then
             cp "$ZIP_FILE" release_out/
             ZIP_NAME=$(basename "$ZIP_FILE")
