@@ -64,7 +64,7 @@ jobs:
           repository: 'SashimiKernel/android_kernel_motorola_sm6375'
           ref: ${{ inputs.branch || 'resukisu' }}
           token: ${{ secrets.PAT }}
-          path: 'android_kernel_motorola_bangkk'
+          path: 'android_kernel_motorola_sm6375'
           fetch-depth: 1
 
       - name: Clone Build Repo
