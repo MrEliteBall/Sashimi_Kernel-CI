@@ -1,0 +1,159 @@
+name: Sashimi CI Build Bangkk
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Kernel Branch'
+        required: true
+        default: 'resukisu'
+        type: string
+      upload_telegram:
+        description: 'Upload build to Telegram'
+        required: true
+        default: true
+        type: boolean
+      create_release:
+        description: 'Create GitHub Release'
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    env:
+      CCACHE_DIR: /home/runner/.ccache
+      CCACHE_MAXSIZE: "2.5G"
+      CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
+      CCACHE_NOHASHDIR: "true"
+      CCACHE_HARDLINK: "true"
+      CCACHE_SLOPPINESS: "time_macros,include_file_mtime"
+
+    steps:
+      - name: Setup Dependencies & ID
+        run: |
+          sudo apt-get update
+          sudo apt-get -y --no-install-recommends install libarchive-tools ccache
+          
+          BUILD_ID=$(date +'%H%M')
+          DATE_STR="$(date +'%d.%m.%y')"
+          DATE_TAG=$(date +'%Y%m%d')
+          DATE_RELEASE=$(date +'%d%m%y')
+          
+          echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
+          echo "DATE_STR=${DATE_STR}" >> $GITHUB_ENV
+          echo "DATE_TAG=${DATE_TAG}" >> $GITHUB_ENV
+          echo "DATE_RELEASE=${DATE_RELEASE}" >> $GITHUB_ENV
+
+      - name: Setup ccache
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.ccache
+          key: ${{ runner.os }}-ccache-${{ inputs.branch }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-${{ inputs.branch }}-
+            ${{ runner.os }}-ccache-
+
+      - name: Clone Kernel Repo
+        uses: sushikernel/github-repo-action@v3.1
+        with:
+          depth: 1
+          branch: ${{ inputs.branch || 'resukisu' }}
+          owner: 'SashimiKernel'
+          repository: 'android_kernel_motorola_bangkk'
+
+      - name: Clone Build Repo
+        uses: sushikernel/github-repo-action@v3.1
+        with:
+          depth: 1
+          branch: 'main'
+          owner: 'SashimiKernel'
+          repository: 'CI'
+
+      - name: Prepare Configuration
+        working-directory: ./CI
+        run: |
+          CONFIG_ENV=$(cat config.env | grep -w "CONFIG_ENV" | head -n 1 | cut -d "=" -f 2)
+          echo "ENABLE_CCACHE=$(cat $CONFIG_ENV | grep -w "ENABLE_CCACHE" | head -n 1 | cut -d "=" -f 2)" >> $GITHUB_ENV
+
+      - name: Set SWAP to 10G
+        uses: SushiKernel/swap@moe
+        with:
+          swap-size-gb: 10
+
+      - name: Clone Scripts Repo
+        uses: sushikernel/github-repo-action@v3.1
+        with:
+          depth: 1
+          owner: 'SashimiKernel'
+          branch: 'bangkk'
+          repository: 'scripts'
+
+      - name: Move Scripts
+        working-directory: ./scripts
+        run: |
+          chmod +x *.sh
+          cp sashimi.sh bot.sh ../android_kernel_motorola_bangkk
+
+      - name: Export Variables
+        if: ${{ inputs.upload_telegram }}
+        working-directory: ./android_kernel_motorola_bangkk
+        run: |
+          echo "CHAT_ID=${{ secrets.CHAT_ID }}" >> .env
+          echo "MESSAGE_THREAD_ID=${{ secrets.MESSAGE_THREAD_ID }}" >> .env
+          echo "API_ID=${{ secrets.API_ID }}" >> .env
+          echo "API_HASH=${{ secrets.API_HASH }}" >> .env
+          echo "BOT_TOKEN=${{ secrets.BOT_TOKEN }}" >> .env
+          echo "MY_ID=${{ secrets.MY_ID }}" >> .env
+          echo "CHANNEL_ID=${{ secrets.CHANNEL_ID }}" >> .env
+
+      - name: Compile Kernel
+        working-directory: ./android_kernel_motorola_bangkk
+        run: |
+          if [ "${{ inputs.upload_telegram }}" = "true" ]; then
+            ./bot.sh
+          else
+            ./sashimi.sh
+          fi
+
+      - name: Prepare Release Artifacts
+        if: ${{ inputs.create_release }}
+        run: |
+          mkdir -p release_out
+          ZIP_FILE=$(find android_kernel_motorola_bangkk -maxdepth 2 -type f -name "sashimi-*.zip" | head -n 1)
+          if [ -n "$ZIP_FILE" ]; then
+            cp "$ZIP_FILE" release_out/
+            ZIP_NAME=$(basename "$ZIP_FILE")
+            SHA256=$(sha256sum "release_out/$ZIP_NAME" | awk '{print $1}')
+            echo "ZIP_PATH=release_out/$ZIP_NAME" >> $GITHUB_ENV
+            echo "ZIP_SHA256=$SHA256" >> $GITHUB_ENV
+          fi
+
+          if [ -d "CI/Manager" ]; then
+            cp CI/Manager/*.apk release_out/
+          elif [ -d "Manager" ]; then
+            cp Manager/*.apk release_out/
+          fi
+          
+      - name: Create GitHub Release
+        if: ${{ inputs.create_release && env.ZIP_PATH != '' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: bangkk-${{ env.DATE_RELEASE }}-${{ env.BUILD_ID }}
+          name: Sashimi Kernel - ${{ env.DATE_RELEASE }}-${{ env.BUILD_ID }} (Bangkk)
+          body: |
+            * Device: bangkk
+            * Date: ${{ env.DATE_STR }}
+            * Branch: ${{ inputs.branch || 'resukisu' }}
+            * KernelSU: Yes ([Manager](https://github.com/${{ github.repository }}/releases/download/bangkk-${{ env.DATE_RELEASE }}-${{ env.BUILD_ID }}/ReSukiSU_Manager.apk) & [Spoofed Manager](https://github.com/${{ github.repository }}/releases/download/bangkk-${{ env.DATE_RELEASE }}-${{ env.BUILD_ID }}/ReSukiSU_Manager-Spoofed.apk))
+            * SHA256: `${{ env.ZIP_SHA256 }}`
+          files: |
+            ${{ env.ZIP_PATH }}
+            release_out/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
