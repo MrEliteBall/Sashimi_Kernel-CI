@@ -125,7 +125,7 @@ jobs:
         if: ${{ inputs.create_release }}
         run: |
           mkdir -p release_out
-          ZIP_FILE=$(find android_kernel_motorola_sm6375 -maxdepth 2 -type f -name "sashimi-*.zip" | head -n 1)
+          ZIP_FILE=$(find android_kernel_motorola_sm6375 -maxdepth 2 -type f -iname "Sashimi-*.zip" | head -n 1)
           if [ -n "$ZIP_FILE" ]; then
             cp "$ZIP_FILE" release_out/
             ZIP_NAME=$(basename "$ZIP_FILE")
