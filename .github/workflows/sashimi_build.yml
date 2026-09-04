@@ -132,6 +132,9 @@ jobs:
             SHA256=$(sha256sum "release_out/$ZIP_NAME" | awk '{print $1}')
             echo "ZIP_PATH=release_out/$ZIP_NAME" >> $GITHUB_ENV
             echo "ZIP_SHA256=$SHA256" >> $GITHUB_ENV
+          else
+            echo "ERROR: No Sashimi ZIP found"
+            exit 1
           fi
 
           if [ -d "CI/Manager" ]; then
